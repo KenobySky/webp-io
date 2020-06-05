@@ -12,12 +12,18 @@ import java.util.Objects;
 public class WebpIO {
 
     /**
+     * *
+     * If true, prints the commands sent to cwebp. If false, dont print anything.
+     */
+    public static boolean PRINT_COMMAND = true;
+
+    /**
      * cwebp/dwebp/gif2webp
      * <p>
      * binary command file path
      */
-    private static final String OS_NAME  = System.getProperty("os.name").toLowerCase();
-    private static final String OS_ARCH  = System.getProperty("os.arch").toLowerCase();
+    private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
+    private static final String OS_ARCH = System.getProperty("os.arch").toLowerCase();
     private static final String DEV_MODE = System.getProperty("webp-io.devMode", "false");
 
     private String commandDir;
@@ -28,7 +34,7 @@ public class WebpIO {
     }
 
     private void init() {
-        String osName   = getOsName();
+        String osName = getOsName();
         String webpPath = "cwebp/" + osName;
 
         if (Boolean.TRUE.toString().equals(DEV_MODE.toUpperCase())) {
@@ -46,8 +52,8 @@ public class WebpIO {
 
         String extension = getExtensionByOs(osName);
 
-        InputStream dwebp    = getInputStream("/" + webpPath + "/dwebp" + extension);
-        InputStream cwebp    = getInputStream("/" + webpPath + "/cwebp" + extension);
+        InputStream dwebp = getInputStream("/" + webpPath + "/dwebp" + extension);
+        InputStream cwebp = getInputStream("/" + webpPath + "/cwebp" + extension);
         InputStream gif2webp = getInputStream("/" + webpPath + "/gif2webp" + extension);
 
         try {
@@ -70,7 +76,7 @@ public class WebpIO {
     /**
      * Converter webp file to normal image
      *
-     * @param src  webp file path
+     * @param src webp file path
      * @param dest normal image path
      */
     public void toNormalImage(String src, String dest) {
@@ -80,7 +86,30 @@ public class WebpIO {
     /**
      * Converter webp file to normal image
      *
-     * @param src  webp file path
+     * @param src webp file path
+     * @param dest normal image path
+     * @param parameters
+     */
+    public void toNormalImage(String src, String dest, String parameters) {
+        toNormalImage(new File(src), new File(dest), parameters);
+    }
+
+    /**
+     * Converter webp file to normal image
+     *
+     * @param src webp file path
+     * @param dest normal image path
+     * @param parameters parameters to the command line, defined on https://developers.google.com/speed/webp/docs/dwebp
+     */
+    public void toNormalImage(File src, File dest, String parameters) {
+        String command = commandDir + (dest.getName().endsWith(".gif") ? "/gif2webp" : "/dwebp ") + src.getPath() + " " + parameters + " " + " -o " + dest.getPath();
+        this.executeCommand(command);
+    }
+
+    /**
+     * Converter webp file to normal image
+     *
+     * @param src webp file path
      * @param dest normal image path
      */
     public void toNormalImage(File src, File dest) {
@@ -91,7 +120,7 @@ public class WebpIO {
     /**
      * Convert normal image to webp file
      *
-     * @param src  nomal image path
+     * @param src nomal image path
      * @param dest webp file path
      */
     public void toWEBP(String src, String dest) {
@@ -101,7 +130,34 @@ public class WebpIO {
     /**
      * Convert normal image to webp file
      *
-     * @param src  nomal image path
+     * @param src nomal image path
+     * @param dest webp file path
+     * @param parameters parameters to the command line, defined on https://developers.google.com/speed/webp/docs/cwebp Example: "-q 80 -resize 400 0 -z 9 -m 6 -mt"
+     */
+    public void toWEBP(String src, String dest, String parameters) {
+        toWEBP(new File(src), new File(dest), parameters);
+    }
+
+    /**
+     * Convert normal image to webp file
+     *
+     * @param src nomal image path
+     * @param dest webp file path
+     * @param parameters parameters to the command line
+     */
+    public void toWEBP(File src, File dest, String parameters) {
+        try {
+            String command = commandDir + (src.getName().endsWith(".gif") ? "/gif2webp " : "/cwebp ") + src.getPath() + " " + parameters + " " + " -o " + dest.getPath();
+            this.executeCommand(command);
+        } catch (Exception e) {
+            throw new WebpIOException(e);
+        }
+    }
+
+    /**
+     * Convert normal image to webp file
+     *
+     * @param src nomal image path
      * @param dest webp file path
      */
     public void toWEBP(File src, File dest) {
@@ -120,23 +176,35 @@ public class WebpIO {
      * @return
      */
     private String executeCommand(String command) {
-        System.out.println("Execute: " + command);
+        if (PRINT_COMMAND) {
+            System.out.println("Execute: " + command);
+        }
 
         StringBuilder output = new StringBuilder();
-        Process       p;
+        Process p = null;
         try {
             p = Runtime.getRuntime().exec(command);
             p.waitFor();
             BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            String         line;
+            String line;
             while ((line = reader.readLine()) != null) {
                 output.append(line).append("\n");
             }
+            p.destroy();
         } catch (Exception e) {
+            if (p != null) {
+                try {
+                    p.destroy();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
             throw new WebpIOException(e);
         }
-        if (!"".equals(output.toString())) {
-            System.out.println("Output: " + output);
+        if (PRINT_COMMAND) {
+            if (!"".equals(output.toString())) {
+                System.out.println("Output: " + output);
+            }
         }
         return "";
     }
@@ -156,9 +224,9 @@ public class WebpIO {
     }
 
     private void copy(InputStream in, File dest) throws IOException {
-        OutputStream out    = new FileOutputStream(dest);
-        byte[]       buffer = new byte[1024];
-        int          length;
+        OutputStream out = new FileOutputStream(dest);
+        byte[] buffer = new byte[1024];
+        int length;
         //copy the file content in bytes
         while ((length = in.read(buffer)) > 0) {
             out.write(buffer, 0, length);
@@ -185,7 +253,7 @@ public class WebpIO {
             // unix
             return "amd64".equalsIgnoreCase(OS_ARCH) ? "linux_x86_64" : "linux_" + OS_ARCH;
         } else {
-            throw new WebpIOException("Hi boy, Your OS is not support!!");
+            throw new WebpIOException("This Operational System does not support this function (webp)");
         }
     }
 
@@ -195,8 +263,11 @@ public class WebpIO {
      * @param os: operating system name
      */
     private String getExtensionByOs(String os) {
-        if (os == null || os.isEmpty()) return "";
-        else if (os.contains("win")) return ".exe";
+        if (os == null || os.isEmpty()) {
+            return "";
+        } else if (os.contains("win")) {
+            return ".exe";
+        }
         return "";
     }
 

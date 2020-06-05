@@ -27,5 +27,4 @@ WebpIO.create().toNormalImage(src, dest);
 WebpIO.create().toWEBP("hello.png", "hello.webp");
 ```
 
-Okay, lets go.
 
