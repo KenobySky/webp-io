@@ -8,6 +8,18 @@ My thanks to 'biezhi' for allowing forks and coderanch for general help.
 
 PS: This is my first fork, so Im sorry if I missed anything.
 
+
+Example of new Usage:
+```java
+    public static void main(String args[]) throws IOException {
+        String src = "A:\\Downloads\\image.jpg";
+        String dest = "A:\\Downloads\\image.webp";
+		String parameters = "-q 80 -resize 400 0 -z 9 -m 6 -mt";
+        WebpIO.create().toWEBP(src, dest, parameters);
+    }
+```
+
+
 # webp-io
 
 The **webp-io** is convert normal image and `webp` file.
