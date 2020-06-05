@@ -1,3 +1,13 @@
+# About this fork
+
+I've updated the cwebp library and added the 'parameters' parameter to the method '.toNormalImage' and 'toWEBP'.
+
+This is also posted in a topic on https://coderanch.com/ since its my first fork of a public project.
+
+My thanks to 'biezhi' for allowing forks and coderanch for general help.
+
+PS: This is my first fork, so Im sorry if I missed anything.
+
 # webp-io
 
 The **webp-io** is convert normal image and `webp` file.
